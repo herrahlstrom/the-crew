@@ -6,8 +6,8 @@ namespace TheCrew.Player.Human;
 
 public class ConsolePlayer : PlayerBase, IPlayer
 {
-   public ConsolePlayer(PlayerModel playerModel, IGameState gameState)
-      : base(playerModel, gameState)
+   public ConsolePlayer(PlayerModel playerModel, ReadOnlyGameModel gameModel)
+      : base(playerModel, gameModel)
    {
    }
 
@@ -29,7 +29,7 @@ public class ConsolePlayer : PlayerBase, IPlayer
 
    public Task<IMissionCardTask> SelectMissionCard()
    {
-      return Task.FromResult(SelectCard(GameState.UnassignedMissionCards, "Select mission"));
+      return Task.FromResult(SelectCard(GameModel.UnassignedMissionCards, "Select mission"));
    }
 
    private static T SelectCard<T>(IEnumerable<T> cards, string requestText) where T : ICard

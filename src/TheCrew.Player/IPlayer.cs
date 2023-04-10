@@ -2,6 +2,11 @@
 
 namespace TheCrew.Player;
 
+public interface IAiPlayer
+{
+   Task<ICard> PlayCard();
+}
+
 public interface IPlayer
 {
    Task<IMissionCardTask> SelectMissionCard();

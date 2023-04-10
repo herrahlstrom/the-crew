@@ -1,4 +1,6 @@
-﻿namespace TheCrew.Model;
+﻿using TheCrew.Shared;
+
+namespace TheCrew.Model;
 
 public static class ModelExtensions
 {
@@ -31,6 +33,15 @@ public static class ModelExtensions
       foreach (var wrappedPLayer in wrapped)
       {
          yield return wrappedPLayer;
+      }
+   }
+
+   public static void PlayCard(this PlayerModel model, ICard card)
+   {
+      var cardFromHand = model.Hand.Where(x => x.Equals(card)).First();
+      if (model.Hand.Remove(cardFromHand))
+      {
+         model.PlayedCard = cardFromHand;
       }
    }
 }

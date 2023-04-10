@@ -1,27 +1,47 @@
-﻿using TheCrew.Shared;
+﻿using System.Collections.ObjectModel;
+using TheCrew.Shared;
 
 namespace TheCrew.Model;
 
-
-
-public class GameModel
+public interface ReadOnlyGameModel
 {
-   required public Guid Id { get; init; }
-   required public List<PlayerModel> Players { get; set; }
-   required public List<IMissionCardTask> UnassignedMissionCards { get; set; }
-   required public List<IGenericMissionTask> GenericMissions { get; set; }
+   ValueCardSuit? CurrentSuit { get; }
+   IReadOnlyList<IMissionCardTask> UnassignedMissionCards { get; }
+}
+public class GameModel : ReadOnlyGameModel
+{
+   public GameModel()
+   {
+      Id = Guid.NewGuid();
+      Players = new List<PlayerModel>();
+      UnassignedMissionCards = new List<IMissionCardTask>();
+      GenericMissions = new List<IGenericMissionTask>();
+   }
+   public Guid Id { get; }
+   public List<PlayerModel> Players { get; }
+   public List<IMissionCardTask> UnassignedMissionCards { get; }
+   public List<IGenericMissionTask> GenericMissions { get; }
    public Guid? LastWinnerPlayerId { get; set; } = null;
    public ValueCardSuit? CurrentSuit { get; set; } = null;
+
+   IReadOnlyList<IMissionCardTask> ReadOnlyGameModel.UnassignedMissionCards => UnassignedMissionCards;
 }
 
 public class PlayerModel
 {
-   required public Guid Id { get; init; }
+   public PlayerModel()
+   {
+      Id = Guid.NewGuid();
+      Hand = new List<IPlayCard>();
+      Missions = new List<IMissionCardTask>();
+      TakenCards = new List<IPlayCard>();
+   }
+   public Guid Id { get; }
    required public PlayerType Type { get; init; }
    required public string Name { get; set; }
-   required public List<IPlayCard> Hand { get; set; }
-   required public List<IMissionCardTask> Missions { get; set; }
-   required public List<IPlayCard> TakenCards { get; set; }
+   public List<IPlayCard> Hand { get; }
+   public List<IMissionCardTask> Missions { get; }
+   public List<IPlayCard> TakenCards { get; }
    public IPlayCard? PlayedCard { get; set; }
    public CommunicationCard? CommunicationCard { get; set; }
    public bool IsCommander { get; set; }
@@ -29,4 +49,4 @@ public class PlayerModel
 
 public record CommunicationCard(ValueCard ValueCard, CommunicationToken Token);
 
-public enum PlayerType { Console, Ai };
+public enum PlayerType { Human, Ai };

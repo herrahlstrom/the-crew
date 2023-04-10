@@ -5,13 +5,13 @@ namespace TheCrew.Player;
 
 public abstract class PlayerBase
 {
-   protected PlayerBase(PlayerModel playerModel, IGameState gameState)
+   protected PlayerBase(PlayerModel playerModel, ReadOnlyGameModel gameModel)
    {
       PlayerModel = playerModel;
-      GameState = gameState;
+      GameModel = gameModel;
    }
 
-   protected IGameState GameState;
+   protected ReadOnlyGameModel GameModel;
    public Guid ID => PlayerModel.Id;
    public string Name => PlayerModel.Name;
    public IPlayCard? PlayedCard => PlayerModel.PlayedCard;
@@ -27,9 +27,9 @@ public abstract class PlayerBase
 
    protected bool IsFollowingSuit(IPlayCard card)
    {
-      return GameState.CurrentSuit is null ||
+      return GameModel.CurrentSuit is null ||
          card.Suit == ValueCardSuit.Rocket ||
-         card.Suit == GameState.CurrentSuit;
+         card.Suit == GameModel.CurrentSuit;
    }
 
    protected abstract IPlayCard SelectCardToPlay();

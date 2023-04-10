@@ -2,5 +2,5 @@ namespace TheCrew.Shared;
 
 public enum CommunicationToken
 {
-    Lowest, Highest, Only
+    None, Lowest, Highest, Only
 }

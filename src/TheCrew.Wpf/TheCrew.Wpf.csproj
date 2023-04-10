@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net7.0-windows</TargetFramework>
+      <Nullable>enable</Nullable>
+      <UseWPF>true</UseWPF>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <None Remove="Resources\Cards\*.png" />
+      <Resource Include="Resources\Cards\*.png" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <ProjectReference Include="..\TheCrew.Model\TheCrew.Model.csproj" />
+      <ProjectReference Include="..\TheCrew.Player\TheCrew.Player.csproj" />
+      <ProjectReference Include="..\TheCrew.Shared\TheCrew.Shared.csproj" />
+   </ItemGroup>
+
+</Project>
