@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 using System.Windows;
 using TheCrew.Wpf.Tools;
 
@@ -8,10 +9,14 @@ namespace TheCrew.Wpf;
 /// </summary>
 public partial class App : Application
 {
-   CancellationTokenSource _cts;
+    private readonly CancellationTokenSource _cts;
+    private readonly Services _services;
+
    public App()
    {
       _cts = new CancellationTokenSource();
+      _services = new Services();
+      
       Startup += App_Startup;
       base.Exit += App_Exit;
    }
@@ -23,12 +28,13 @@ public partial class App : Application
 
    private void App_Startup(object sender, StartupEventArgs e)
    {
+      MainViewModel viewModel = _services.GetRequiredService<MainViewModel>();
+      viewModel.InitNewGame(1);
+      viewModel.StartEngine(_cts.Token);
+
       MainWindow = new MainWindow()
       {
-         DataContext = new MainViewModel(
-            new GameInitiator().CreateNewGame(1),
-            new CardImageSelector(),
-            _cts.Token)
+         DataContext = viewModel
       };
       MainWindow.Show();
    }

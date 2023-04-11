@@ -2,28 +2,31 @@
 
 namespace TheCrew.Model;
 
-public interface ReadOnlyGameModel
-{
-   ValueCardSuit? CurrentSuit { get; }
-   IReadOnlyList<IMissionCardTask> UnassignedMissionCards { get; }
-}
-public class GameModel : ReadOnlyGameModel
+public class GameModel
 {
    public GameModel()
    {
-      Id = Guid.NewGuid();
       Players = new List<PlayerModel>();
-      UnassignedMissionCards = new List<IMissionCardTask>();
+      UnassignedMissionCards = new List<IMissionTaskCard>();
       GenericMissions = new List<IGenericMissionTask>();
    }
-   public Guid Id { get; }
    public List<PlayerModel> Players { get; }
-   public List<IMissionCardTask> UnassignedMissionCards { get; }
+   public List<IMissionTaskCard> UnassignedMissionCards { get; }
    public List<IGenericMissionTask> GenericMissions { get; }
    public Guid? LastWinnerPlayerId { get; set; } = null;
+   public Guid CurrentPlayer { get; set; } = Guid.Empty;
    public ValueCardSuit? CurrentSuit { get; set; } = null;
 
-   IReadOnlyList<IMissionCardTask> ReadOnlyGameModel.UnassignedMissionCards => UnassignedMissionCards;
+   public void Clear()
+   {
+      UnassignedMissionCards.Clear();
+      GenericMissions.Clear();
+      LastWinnerPlayerId = null;
+      CurrentSuit = null;
+      CurrentPlayer = Guid.Empty;
+
+      Players.Clear();
+   }
 }
 
-public record CommunicationCard(ValueCard ValueCard, CommunicationToken Token);
+public record CommunicationCard(IPlayCard ValueCard, CommunicationToken Token);

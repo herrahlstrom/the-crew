@@ -5,133 +5,94 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TheCrew.Model;
+using TheCrew.Model.Tools;
+using TheCrew.Player;
 using TheCrew.Shared;
-using TheCrew.Wpf.ViewModels;
+using TheCrew.Shared.Extensions;
+using TheCrew.Wpf.Factories;
 
 namespace TheCrew.Wpf;
+
+internal class GameAwareness : IGameAwareness
+{
+   private readonly PlayerModel _player;
+
+   public GameAwareness(PlayerModel player)
+   {
+      _player = player;
+   }
+   public Predicate<IPlayCard> CanPlayPredicate => _player.CanPlayCard;
+
+   public Func<IEnumerable<IMissionTaskCard>> UnassignedMissionCards => () => _player.Game.UnassignedMissionCards;
+
+   public Func<IEnumerable<IPlayCard>> Hand => () => _player.Hand;
+}
+
 internal class MainViewModel : ViewModelBase
 {
-   readonly ICardImageSelector _cardImageSelector;
    readonly GameEngine _engine;
-   readonly Task _engineTask;
    readonly GameModel _game;
+   private readonly PlayerViewModelFactory _playerViewModelFactory;
 
-   private PlayerViewModel _currentPlayer = null!;
-
-   public MainViewModel(GameModel game, ICardImageSelector cardImageSelector, CancellationToken cancellationToken)
+   public MainViewModel(GameModel game, PlayerViewModelFactory playerViewModelFactory)
    {
-      _cardImageSelector = cardImageSelector;
       _game = game;
-
-      var humanPlayer = (from player in _game.Players
-                         where player.Type == PlayerType.Human
-                         select player).Single();
-      BottomPlayer = PlayerViewModel.CreateHuman(_game, humanPlayer, CanPlay);
-      BottomPlayer.CardSelected += HumanPlayer_CardSelected;
-
-      var otherPlayerEnumerator = (from player in _game.Players
-                                   where player.Type != PlayerType.Human
-                                   select player).GetEnumerator();
-      otherPlayerEnumerator.MoveNext();
-      LeftPlayer = PlayerViewModel.CreateAi(_game, otherPlayerEnumerator.Current, CanPlay);
-
-      otherPlayerEnumerator.MoveNext();
-      TopPlayer = PlayerViewModel.CreateAi(_game, otherPlayerEnumerator.Current, CanPlay);
-
-      otherPlayerEnumerator.MoveNext();
-      RightPlayer = PlayerViewModel.CreateAi(_game, otherPlayerEnumerator.Current, CanPlay);
-
-      Players = new[] { TopPlayer, LeftPlayer, RightPlayer, BottomPlayer }
-         .ToImmutableDictionary(x => x.Id, x => x);
-
+      _playerViewModelFactory = playerViewModelFactory;
       _engine = new(_game, PlayCard, StickCompleted);
-      _engine.PlayerChanged += (_, player) => { CurrentPlayer = Players[player.Id]; };
-
-      InitGame();
-      InitTrick();
-
-      //      CurrentPlayer = Players[turnPlayerIdQueue.Dequeue()];
-
-      _engineTask = Task.Run(() => _engine.GamePlay(cancellationToken), cancellationToken);
+      _engine.PlayerChanged += (_, playerId) =>
+      {
+         Players.Values.ForEach(pvm => pvm.IsCurrent = pvm.Id.Equals(playerId));
+         OnPropertyChanged(nameof(CurrentPlayer));
+      };
    }
 
-   public PlayerViewModel BottomPlayer { get; }
+   public void InitNewGame(int missionNumber)
+   {
+      new GameInitiator().InitNewGame(_game, missionNumber);
+
+      var playerEnumerator = _game.Players.Select(_playerViewModelFactory.Create).GetEnumerator();
+
+      playerEnumerator.MoveNext();
+      BottomPlayer = playerEnumerator.Current;
+
+      playerEnumerator.MoveNext();
+      LeftPlayer = playerEnumerator.Current;
+
+      playerEnumerator.MoveNext();
+      TopPlayer = playerEnumerator.Current;
+
+      playerEnumerator.MoveNext();
+      RightPlayer = playerEnumerator.Current;
+
+      Players = new[] { TopPlayer, LeftPlayer, RightPlayer, BottomPlayer }.ToImmutableDictionary(x => x.Id, x => x);
+   }
+
+   public void StartEngine(CancellationToken cancellationToken)
+   {
+      InitTrick();
+
+      Task.Run(() => _engine.GamePlay(cancellationToken), cancellationToken);
+   }
+
+
+   public PlayerViewModel BottomPlayer { get; private set; } = null!;
 
    public PlayerViewModel CurrentPlayer
    {
-      get { return _currentPlayer; }
-      set
-      {
-         _currentPlayer = value;
-         OnPropertyChanged();
-
-         foreach (var player in Players.Values)
-         {
-            player.IsCurrent = player.Equals(_currentPlayer);
-         }
-      }
+      get { return Players[_game.CurrentPlayer]; }
    }
-   public PlayerViewModel LeftPlayer { get; }
-   public PlayerViewModel RightPlayer { get; }
+   public PlayerViewModel LeftPlayer { get; private set; } = null!;
+   public PlayerViewModel RightPlayer { get; private set; } = null!;
 
-   public PlayerViewModel TopPlayer { get; }
+   public PlayerViewModel TopPlayer { get; private set; } = null!;
 
-   private IReadOnlyDictionary<Guid, PlayerViewModel> Players { get; }
-
-   bool CanPlay(CardViewModel card, IReadOnlyCollection<CardViewModel> hand)
-   {
-      if (card.Card is IPlayCard playCard)
-      {
-         if (_game.CurrentSuit is null)
-         {
-            return true;
-         }
-
-         if (playCard.Suit == ValueCardSuit.Rocket)
-         {
-            return true;
-         }
-
-         if (playCard.Suit == _game.CurrentSuit)
-         {
-            return true;
-         }
-
-         if (!hand.Select(x => x.Card).OfType<IPlayCard>().Any(x => x.Suit == _game.CurrentSuit))
-         {
-            return true;
-         }
-      }
-
-      return false;
-   }
+   private IReadOnlyDictionary<Guid, PlayerViewModel> Players { get; set; } = ImmutableDictionary<Guid, PlayerViewModel>.Empty;
 
    private void CompleteTrick()
    {
       // Check winner
 
    }
-
-   private void HumanPlayer_CardSelected(object? sender, CardSelectedEventArgs e)
-   {
-      if (CurrentPlayer.Equals(sender))
-      {
-         CurrentPlayer.PlayCard(e.Card);
-      }
-   }
-
-   private void InitGame()
-   {
-      foreach (var player in _game.Players)
-      {
-         Players[player.Id]
-            .AddCardsToHand(player.Hand
-               .OrderBy(x => x.Suit == ValueCardSuit.Rocket ? 1 : 0)
-               .ThenBy(x => x.Suit)
-               .ThenBy(x => x.Value), _cardImageSelector, player.Type.Equals(PlayerType.Human));
-      }
-   }
-
 
    private void InitTrick()
    {

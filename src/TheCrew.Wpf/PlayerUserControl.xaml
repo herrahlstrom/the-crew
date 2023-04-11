@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:TheCrew.Wpf" xmlns:converters="clr-namespace:TheCrew.Wpf.Converters"
+             xmlns:local="clr-namespace:TheCrew.Wpf"
+             xmlns:converters="clr-namespace:TheCrew.Wpf.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="120" d:DesignWidth="800">
 
@@ -33,16 +34,16 @@
             <Setter Property="Width" Value="80" />
             <Setter Property="Margin" Value="0,0,-50,0" />
             <Style.Triggers>
-               <DataTrigger Binding="{Binding DataContext.Hand.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="1">
+               <DataTrigger Binding="{Binding DataContext.HandView.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="1">
                   <Setter Property="Margin" Value="0,0,-10,0" />
                </DataTrigger>
-               <DataTrigger Binding="{Binding DataContext.Hand.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="2">
+               <DataTrigger Binding="{Binding DataContext.HandView.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="2">
                   <Setter Property="Margin" Value="0,0,-20,0" />
                </DataTrigger>
-               <DataTrigger Binding="{Binding DataContext.Hand.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="3">
+               <DataTrigger Binding="{Binding DataContext.HandView.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="3">
                   <Setter Property="Margin" Value="0,0,-30,0" />
                </DataTrigger>
-               <DataTrigger Binding="{Binding DataContext.Hand.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="4">
+               <DataTrigger Binding="{Binding DataContext.HandView.Count, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}" Value="4">
                   <Setter Property="Margin" Value="0,0,-50,0" />
                </DataTrigger>
             </Style.Triggers>
@@ -50,7 +51,7 @@
          <Style TargetType="Image" x:Key="CardImage">
             <Style.Triggers>
                <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Opacity" Value="0.5" />
+                  <Setter Property="Opacity" Value="0.3" />
                </Trigger>
             </Style.Triggers>
          </Style>
@@ -63,7 +64,7 @@
             <ColumnDefinition Width="Auto"/>
          </Grid.ColumnDefinitions>
 
-         <ItemsControl ItemsSource="{Binding Hand}" Grid.ColumnSpan="2">
+         <ItemsControl ItemsSource="{Binding HandView}" Grid.ColumnSpan="2">
             <ItemsControl.ItemsPanel>
                <ItemsPanelTemplate>
                   <StackPanel Orientation="Horizontal" Margin="5" />
@@ -71,7 +72,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                <DataTemplate>
-                  <Button Style="{StaticResource CardButton}" Command="{Binding CardClickedCommand}" CommandParameter="{Binding}">
+                  <Button Style="{StaticResource CardButton}" Command="{Binding CardOnHandClickedCommand}">
                      <Image Source="{Binding Image}" Style="{StaticResource CardImage}" Stretch="Fill" />
                   </Button>
                </DataTemplate>

@@ -1,37 +1,26 @@
-﻿
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows.Input;
 
 namespace TheCrew.Wpf.Tools;
 
-internal class RelayCommand<TParameter> : ICommand
+internal class RelayCommand<TParameter> : Executor<TParameter>, ICommand
 {
-   private Action<TParameter> _execute;
-   private Predicate<TParameter> _predicate;
-
-   public RelayCommand(Action<TParameter> execute) : this(_ => true, execute)
-   {
-   }
+   public RelayCommand(Action<TParameter> execute)
+      : base(_ => true, execute) { }
 
    public RelayCommand(Predicate<TParameter> predicate, Action<TParameter> execute)
-   {
-      _predicate = predicate;
-      _execute = execute;
-   }
+      : base(predicate, execute) { }
 
    public event EventHandler? CanExecuteChanged;
 
-   public bool CanExecute(object? parameter)
-   {
-      return parameter is TParameter p && _predicate.Invoke(p);
-   }
+   public bool CanExecute(object? parameter) => parameter is TParameter p && base.CanExecute(p);
 
    public void Execute(object? parameter)
    {
       if (parameter is TParameter p)
       {
-         _execute.Invoke(p);
+         base.Execute(p);
       }
    }
 
@@ -44,30 +33,26 @@ internal class RelayCommand<TParameter> : ICommand
    }
 }
 
-internal class RelayCommand : ICommand
+internal class RelayCommand : Executor, ICommand
 {
-   private Action _execute;
-   private Func<bool> _predicate;
-
-   public RelayCommand(Action execute) : this(() => true, execute)
+   public RelayCommand(Action execute) : base(() => true, execute)
    {
    }
 
    public RelayCommand(Func<bool> predicate, Action execute)
-   {
-      _predicate = predicate;
-      _execute = execute;
-   }
+      : base(predicate, execute) { }
 
    public event EventHandler? CanExecuteChanged;
 
-   public bool CanExecute(object? parameter)
-   {
-      return _predicate.Invoke();
-   }
+   bool ICommand.CanExecute(object? parameter) => CanExecute();
 
-   public void Execute(object? parameter)
+   void ICommand.Execute(object? parameter) => Execute();
+
+   public void Revalidate()
    {
-      _execute.Invoke();
+      App.Current.Dispatcher.Invoke(() =>
+      {
+         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+      });
    }
 }

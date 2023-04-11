@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TheCrew.Shared;
 
-public record CommunicationCard(ValueCard ValueCard, CommunicationToken Token);
+public record CommunicationCard(IPlayCard Card, CommunicationToken Token);
 
 public class PlayerHand : IReadOnlyCollection<IPlayCard>
 {

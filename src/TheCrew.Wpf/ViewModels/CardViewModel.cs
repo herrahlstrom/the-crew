@@ -1,27 +1,31 @@
-﻿using System.Windows.Media;
+﻿using System;
+using System.Windows.Media;
 using TheCrew.Shared;
 using TheCrew.Wpf.Tools;
 
 namespace TheCrew.Wpf.ViewModels;
 
-internal class CardViewModel : ViewModelBase
+internal class CardViewModel<TCard> : ViewModelBase where TCard : ICard
 {
    private readonly ICardImageSelector _cardImageSelector;
-   private bool frontface;
+   private bool frontface = false;
 
-   public CardViewModel(ICard card, ICardImageSelector cardImageSelector, RelayCommand<CardViewModel> cardClickedCommand)
+   public CardViewModel(TCard card, ICardImageSelector cardImageSelector)
    {
       Card = card;
       _cardImageSelector = cardImageSelector;
 
-      CardClickedCommand = cardClickedCommand;
-
-      //CardSelected
+      CardOnHandClickedCommand = new RelayCommand(
+         predicate: () => CanPlay.Invoke(Card),
+         execute: () => CardSelected.Invoke(Card));
    }
 
-   public ICard Card { get; }
+   public Predicate<TCard> CanPlay { get; set; } = (_) => false;
+   public Action<TCard> CardSelected { get; set; } = (_) => { };
 
-   public RelayCommand<CardViewModel> CardClickedCommand { get; }
+   public TCard Card { get; }
+
+   public RelayCommand CardOnHandClickedCommand { get; }
 
    public bool Frontface
    {

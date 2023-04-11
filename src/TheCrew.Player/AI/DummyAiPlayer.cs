@@ -4,78 +4,72 @@ using TheCrew.Shared;
 using TheCrew.Shared.Extensions;
 
 namespace TheCrew.Player.AI;
-public class DummyAiPlayer : PlayerBase, IPlayer, IAiPlayer
+
+public abstract class AiPlayer
 {
-   public DummyAiPlayer(PlayerModel playerModel, ReadOnlyGameModel gameModel)
-      : base(playerModel, gameModel)
+   protected IGameAwareness Game { get; }
+
+   public AiPlayer(IGameAwareness game)
+   {
+      Game = game;
+   }
+}
+
+public class DummyAiPlayer : AiPlayer, IAiPlayer
+{
+   public DummyAiPlayer(IGameAwareness gameAwareness) : base(gameAwareness)
    {
    }
 
-   public bool IsCommander => PlayerModel.IsCommander;
-
-   public Task<IMissionCardTask> SelectMissionCard()
+   public IMissionTaskCard SelectMissionCard()
    {
-      var highValueOnHandMissions = GameModel.UnassignedMissionCards
+      IReadOnlyCollection<IPlayCard> hand = Game.Hand.Invoke().AsReadOnlyCollection();
+      IReadOnlyCollection<IMissionTaskCard> unassignedMissionCards = Game.UnassignedMissionCards.Invoke().AsReadOnlyCollection();
+
+      var highValueOnHandMissions = unassignedMissionCards
          .OfType<ValueMissionCardTask>()
          .Where(x => x.Value > 6)
-         .Where(x => PlayerModel.Hand.Any(y => y.Suit == x.Suit && y.Value == x.Value))
+         .Where(x => hand.Any(y => y.Suit == x.Suit && y.Value == x.Value))
          .OrderByDescending(x => x.Value)
          .FirstOrDefault();
       if (highValueOnHandMissions != null)
       {
-         return Task.FromResult((IMissionCardTask)highValueOnHandMissions);
+         return highValueOnHandMissions;
       }
 
-      var lowValueNotInHandMissions = GameModel.UnassignedMissionCards
+      var lowValueNotInHandMissions = unassignedMissionCards
          .OfType<ValueMissionCardTask>()
          .Where(x => x.Value < 4)
-         .Where(x => !PlayerModel.Hand.Any(y => y.Suit == x.Suit && y.Value == x.Value))
+         .Where(x => !hand.Any(y => y.Suit == x.Suit && y.Value == x.Value))
          .OrderBy(x => x.Value)
          .FirstOrDefault();
       if (lowValueNotInHandMissions != null)
       {
-         return Task.FromResult((IMissionCardTask)lowValueNotInHandMissions);
+         return lowValueNotInHandMissions;
       }
 
       // Select at random
-      var randomEnumerator = new RandomEnumerator<IMissionCardTask>(GameModel.UnassignedMissionCards);
+      var randomEnumerator = new RandomEnumerator<IMissionTaskCard>(unassignedMissionCards);
       randomEnumerator.MoveNext();
-      return Task.FromResult(randomEnumerator.Current);
+      return randomEnumerator.Current;
    }
 
-   protected override IPlayCard SelectCardToPlay()
+   public IPlayCard SelectCardToPlay()
    {
       // Todo: gör lite smartare
 
-      var cardEnumerator = PlayerModel.Hand.Where(IsFollowingSuit).GetRandomEnumerator();
+      IReadOnlyCollection<IPlayCard> hand = Game.Hand.Invoke().AsReadOnlyCollection();
+
+      var cardEnumerator = hand.Where(x => Game.CanPlayPredicate(x)).GetRandomEnumerator();
       if (cardEnumerator.MoveNext())
       {
          return cardEnumerator.Current;
       }
 
-      cardEnumerator = PlayerModel.Hand.GetRandomEnumerator();
+      cardEnumerator = hand.GetRandomEnumerator();
       return cardEnumerator.MoveNext()
                ? cardEnumerator.Current
                : throw new UnreachableException();
    }
 
-   Task<ICard> IAiPlayer.PlayCard()
-   {
-      ICard result;
-
-      var cardEnumerator = PlayerModel.Hand.Where(IsFollowingSuit).GetRandomEnumerator();
-      if (cardEnumerator.MoveNext())
-      {
-         result = cardEnumerator.Current;
-      }
-      else
-      {
-         cardEnumerator = PlayerModel.Hand.GetRandomEnumerator();
-         result = cardEnumerator.MoveNext()
-                  ? cardEnumerator.Current
-                  : throw new UnreachableException();
-      }
-
-      return Task.FromResult(result);
-   }
 }

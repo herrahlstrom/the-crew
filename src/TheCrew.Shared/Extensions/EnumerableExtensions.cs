@@ -20,4 +20,21 @@ public static class EnumerableExtensions
    {
       return new RandomEnumerator<T>(items);
    }
+
+   public static IReadOnlyCollection<T> AsReadOnlyCollection<T>(this IEnumerable<T> items) where T : notnull
+   {
+      if (items is IReadOnlyCollection<T> collection)
+      {
+         return collection;
+      }
+      return items.ToList();
+   }
+
+   public static void ForEach<T>(this IEnumerable<T> items, Action<T> action)
+   {
+      foreach(var item in items)
+      {
+         action.Invoke(item);
+      }
+   }
 }

@@ -6,13 +6,15 @@ using TheCrew.Model;
 using TheCrew.Shared;
 using TheCrew.Shared.Extensions;
 
-namespace TheCrew.Wpf.Tools;
-internal class GameInitiator
+namespace TheCrew.Model.Tools;
+
+public class GameInitiator
 {
-   public GameModel CreateNewGame(int missionNumber)
+   public void InitNewGame(GameModel game, int missionNumber)
    {
-      var game = new GameModel();
-      game.Players.AddRange(CreatePlayerModels());
+      game.Clear();
+
+      game.Players.AddRange(CreatePlayerModels(game));
 
       DistributeCardsToPlayer(game.Players);
 
@@ -20,7 +22,7 @@ internal class GameInitiator
       {
          switch (mission)
          {
-            case IMissionCardTask missionCard:
+            case IMissionTaskCard missionCard:
                game.UnassignedMissionCards.Add(missionCard);
                break;
 
@@ -32,13 +34,11 @@ internal class GameInitiator
                throw new NotSupportedException("Not supported type of mission: " + mission.GetType());
          }
       }
-
-      return game;
    }
 
-   private IEnumerable<PlayerModel> CreatePlayerModels()
+   private IEnumerable<PlayerModel> CreatePlayerModels(GameModel game)
    {
-      yield return new PlayerModel
+      yield return new PlayerModel(game)
       {
          Type = PlayerType.Human,
          Name = Environment.UserName,
@@ -49,7 +49,7 @@ internal class GameInitiator
       for (int i = 0; i < numberOfAi; i++)
       {
          aiNames.MoveNext();
-         yield return new PlayerModel()
+         yield return new PlayerModel(game)
          {
             Type = PlayerType.Ai,
             Name = aiNames.MoveNext() ? aiNames.Current : throw new UnreachableException(),
@@ -90,22 +90,23 @@ internal class GameInitiator
          _ => throw new NotImplementedException($"Mission {missionNumber} is not implemented"),
       };
 
-      IEnumerable<IMissionCardTask> GetRandomMissionCards(int numberOfCards, params MissionCardToken[] tokens)
+        static IEnumerable<IMissionTaskCard> GetRandomMissionCards(int numberOfCards, params MissionCardToken[] tokens)
       {
-         var valueCards = CardFactory
-            .GetAllValueCards()
+         var missionCards = CardFactory
+            .GetAllValueMissionCards()
             .AtRandomOrder()
             .Take(numberOfCards);
 
          var tokenEnumerator = tokens.OfType<MissionCardToken>().GetEnumerator();
 
-         foreach (var valueCard in valueCards)
+         foreach (var missionCard in missionCards)
          {
-            MissionCardToken token = tokenEnumerator.MoveNext()
-               ? tokenEnumerator.Current
-               : MissionCardToken.None;
-            IMissionCardTask card = new ValueMissionCardTask(valueCard.Suit, valueCard.Value, token);
-            yield return card;
+            yield return missionCard with
+            {
+               Token = tokenEnumerator.MoveNext()
+                  ? tokenEnumerator.Current
+                  : MissionCardToken.None
+            };
          }
       }
    }

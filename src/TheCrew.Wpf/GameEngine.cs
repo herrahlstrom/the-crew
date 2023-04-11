@@ -19,7 +19,7 @@ namespace TheCrew.Wpf
          _stickCompleted = stickCompleted;
       }
 
-      public event EventHandler<PlayerModel>? PlayerChanged;
+      public event EventHandler<Guid>? PlayerChanged;
 
       public async Task GamePlay(CancellationToken cancellationToken)
       {
@@ -33,7 +33,16 @@ namespace TheCrew.Wpf
 
                foreach (var player in _game.GetPlayerRoundFromStartPlayer())
                {
+                  cancellationToken.ThrowIfCancellationRequested();
+
+                  _game.CurrentPlayer = player.Id;
+                  PlayerChanged?.Invoke(this, player.Id);
+
+                  await Task.Delay(750, cancellationToken);
+
                   await HandlePlayer(player, cancellationToken);
+                  
+                  await Task.Delay(500, cancellationToken);
                }
 
                var winnerId = GetWinner();
@@ -64,9 +73,6 @@ namespace TheCrew.Wpf
 
       private async Task HandlePlayer(PlayerModel player, CancellationToken cancellationToken)
       {
-         cancellationToken.ThrowIfCancellationRequested();
-
-         PlayerChanged?.Invoke(this, player);
 
          await _playCardAction.Invoke(player.Id);
          //if (player.Type == PlayerType.Ai)

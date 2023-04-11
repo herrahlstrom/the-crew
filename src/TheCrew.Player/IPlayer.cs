@@ -4,16 +4,12 @@ namespace TheCrew.Player;
 
 public interface IAiPlayer
 {
-   Task<ICard> PlayCard();
+   IMissionTaskCard SelectMissionCard();
+   IPlayCard SelectCardToPlay();
 }
 
 public interface IPlayer
 {
    Guid ID { get; }
-   bool IsCommander { get; }
-   string Name { get; }
-   IPlayCard? PlayedCard { get; }
 
-   Task PlayCard();
-   Task<IMissionCardTask> SelectMissionCard();
 }
