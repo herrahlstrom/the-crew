@@ -9,10 +9,11 @@ public interface IAiPlayer
 
 public interface IPlayer
 {
-   Task<IMissionCardTask> SelectMissionCard();
-   Task PlayCard();
-   IPlayCard? PlayedCard { get; }
    Guid ID { get; }
-   string Name { get; }
    bool IsCommander { get; }
+   string Name { get; }
+   IPlayCard? PlayedCard { get; }
+
+   Task PlayCard();
+   Task<IMissionCardTask> SelectMissionCard();
 }

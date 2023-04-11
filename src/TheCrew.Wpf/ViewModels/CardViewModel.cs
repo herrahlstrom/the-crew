@@ -6,33 +6,33 @@ namespace TheCrew.Wpf.ViewModels;
 
 internal class CardViewModel : ViewModelBase
 {
-    private bool frontface;
-    private readonly ICardImageSelector _cardImageSelector;
+   private readonly ICardImageSelector _cardImageSelector;
+   private bool frontface;
 
-    public bool Frontface
-    {
-        get { return frontface; }
-        set
-        {
-            frontface = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Image));
-        }
-    }
+   public CardViewModel(ICard card, ICardImageSelector cardImageSelector, RelayCommand<CardViewModel> cardClickedCommand)
+   {
+      Card = card;
+      _cardImageSelector = cardImageSelector;
 
-    public ICard Card { get; }
+      CardClickedCommand = cardClickedCommand;
 
-    public ImageSource Image => _cardImageSelector.GetCard(Card, Frontface);
+      //CardSelected
+   }
 
-    public CardViewModel(ICard card, ICardImageSelector cardImageSelector, RelayCommand<CardViewModel> cardClickedCommand)
-    {
-        Card = card;
-        _cardImageSelector = cardImageSelector;
+   public ICard Card { get; }
 
-        CardClickedCommand = cardClickedCommand;
+   public RelayCommand<CardViewModel> CardClickedCommand { get; }
 
-        //CardSelected
-    }
+   public bool Frontface
+   {
+      get { return frontface; }
+      set
+      {
+         frontface = value;
+         OnPropertyChanged();
+         OnPropertyChanged(nameof(Image));
+      }
+   }
 
-    public RelayCommand<CardViewModel> CardClickedCommand { get; }
+   public ImageSource Image => _cardImageSelector.GetCard(Card, Frontface);
 }

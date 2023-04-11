@@ -10,23 +10,8 @@ public class DummyAiPlayer : PlayerBase, IPlayer, IAiPlayer
       : base(playerModel, gameModel)
    {
    }
+
    public bool IsCommander => PlayerModel.IsCommander;
-
-   protected override IPlayCard SelectCardToPlay()
-   {
-      // Todo: gör lite smartare
-
-      var cardEnumerator = PlayerModel.Hand.Where(IsFollowingSuit).GetRandomEnumerator();
-      if (cardEnumerator.MoveNext())
-      {
-         return cardEnumerator.Current;
-      }
-
-      cardEnumerator = PlayerModel.Hand.GetRandomEnumerator();
-      return cardEnumerator.MoveNext()
-               ? cardEnumerator.Current
-               : throw new UnreachableException();
-   }
 
    public Task<IMissionCardTask> SelectMissionCard()
    {
@@ -56,6 +41,22 @@ public class DummyAiPlayer : PlayerBase, IPlayer, IAiPlayer
       var randomEnumerator = new RandomEnumerator<IMissionCardTask>(GameModel.UnassignedMissionCards);
       randomEnumerator.MoveNext();
       return Task.FromResult(randomEnumerator.Current);
+   }
+
+   protected override IPlayCard SelectCardToPlay()
+   {
+      // Todo: gör lite smartare
+
+      var cardEnumerator = PlayerModel.Hand.Where(IsFollowingSuit).GetRandomEnumerator();
+      if (cardEnumerator.MoveNext())
+      {
+         return cardEnumerator.Current;
+      }
+
+      cardEnumerator = PlayerModel.Hand.GetRandomEnumerator();
+      return cardEnumerator.MoveNext()
+               ? cardEnumerator.Current
+               : throw new UnreachableException();
    }
 
    Task<ICard> IAiPlayer.PlayCard()

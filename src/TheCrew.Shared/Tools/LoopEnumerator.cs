@@ -4,36 +4,36 @@ namespace TheCrew.Shared.Extensions;
 
 public class LoopEnumerator<T> : IEnumerator<T> where T : notnull
 {
-    private readonly IReadOnlyList<T> _collection;
-    private int _current;
+   private readonly IReadOnlyList<T> _collection;
+   private int _current;
 
-     public LoopEnumerator(IEnumerable<T> items)
-    {
-        _collection = items is IReadOnlyList<T> collection
-            ? collection
-            : items.ToList();
+   public LoopEnumerator(IEnumerable<T> items)
+   {
+      _collection = items is IReadOnlyList<T> collection
+          ? collection
+          : items.ToList();
 
-        Reset();
-    }
+      Reset();
+   }
 
    public T Current => _collection[_current];
 
    object IEnumerator.Current => _collection[_current];
 
    public void Dispose()
-   {   }
+   { }
 
    public bool MoveNext()
    {
-      if(_collection.Count==0)
+      if (_collection.Count == 0)
       {
-        return false;
+         return false;
       }
 
       _current++;
-      if(_current >= _collection.Count)
+      if (_current >= _collection.Count)
       {
-        _current = 0;
+         _current = 0;
       }
       return true;
    }

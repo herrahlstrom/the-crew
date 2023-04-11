@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TheCrew.Model;
-using TheCrew.Player;
 using TheCrew.Shared;
 using TheCrew.Shared.Extensions;
 
@@ -39,21 +36,6 @@ internal class GameInitiator
       return game;
    }
 
-   private void DistributeCardsToPlayer(IEnumerable<PlayerModel> players)
-   {
-      IEnumerator<IPlayCard> cardEnumerator = CardFactory.GetAllPlayCards().GetRandomEnumerator();
-      LoopEnumerator<PlayerModel> playerEnumerator = players.GetLoopEnumerator();
-      while (cardEnumerator.MoveNext() && playerEnumerator.MoveNext())
-      {
-         playerEnumerator.Current.Hand.Add(cardEnumerator.Current);
-
-         if(cardEnumerator.Current.Suit == ValueCardSuit.Rocket && cardEnumerator.Current.Value == 4)
-         {
-            playerEnumerator.Current.IsCommander = true;
-         }
-      }
-   }
-
    private IEnumerable<PlayerModel> CreatePlayerModels()
    {
       yield return new PlayerModel
@@ -72,6 +54,21 @@ internal class GameInitiator
             Type = PlayerType.Ai,
             Name = aiNames.MoveNext() ? aiNames.Current : throw new UnreachableException(),
          };
+      }
+   }
+
+   private void DistributeCardsToPlayer(IEnumerable<PlayerModel> players)
+   {
+      IEnumerator<IPlayCard> cardEnumerator = CardFactory.GetAllPlayCards().GetRandomEnumerator();
+      LoopEnumerator<PlayerModel> playerEnumerator = players.GetLoopEnumerator();
+      while (cardEnumerator.MoveNext() && playerEnumerator.MoveNext())
+      {
+         playerEnumerator.Current.Hand.Add(cardEnumerator.Current);
+
+         if (cardEnumerator.Current.Suit == ValueCardSuit.Rocket && cardEnumerator.Current.Value == 4)
+         {
+            playerEnumerator.Current.IsCommander = true;
+         }
       }
    }
 

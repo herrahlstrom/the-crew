@@ -5,13 +5,15 @@ namespace TheCrew.Player;
 
 public abstract class PlayerBase
 {
+
+   protected ReadOnlyGameModel GameModel;
+
    protected PlayerBase(PlayerModel playerModel, ReadOnlyGameModel gameModel)
    {
       PlayerModel = playerModel;
       GameModel = gameModel;
    }
 
-   protected ReadOnlyGameModel GameModel;
    public Guid ID => PlayerModel.Id;
    public string Name => PlayerModel.Name;
    public IPlayCard? PlayedCard => PlayerModel.PlayedCard;

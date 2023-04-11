@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Data;
 using TheCrew.Model;
 using TheCrew.Player;
 using TheCrew.Player.AI;
@@ -17,25 +15,25 @@ using TheCrew.Wpf.ViewModels;
 
 namespace TheCrew.Wpf;
 
-class CardSelectedEventArgs : EventArgs { public CardViewModel Card { get; set; } }
-
 delegate bool CanPlayDelegate(CardViewModel card, IReadOnlyCollection<CardViewModel> hand);
+
+class CardSelectedEventArgs : EventArgs { public CardViewModel Card { get; set; } }
 
 internal class PlayerViewModel : ViewModelBase
 {
-   public SemaphoreSlim? CardPlayedSemaphore { get; init; }
-   
-   public static PlayerViewModel CreateAi(GameModel gameModel, PlayerModel model, CanPlayDelegate canPlayPredicate)
-   {
-      return new PlayerViewModel(new DummyAiPlayer(model, gameModel), gameModel, model, canPlayPredicate);
-   }
-   public static PlayerViewModel CreateHuman(GameModel gameModel, PlayerModel model, CanPlayDelegate canPlayPredicate)
-   {
-      return new PlayerViewModel(new WpfPlayer(model, gameModel), gameModel, model, canPlayPredicate)
-      {
-         CardPlayedSemaphore = new(0, 1)
-      };
-   }
+   private readonly GameModel _gameModel;
+   private readonly PlayerModel _model;
+   private readonly IPlayer _player;
+
+   private CardViewModel? _communicatedCard;
+   private CommunicationToken _communicationToken = CommunicationToken.None;
+
+   private bool _isCurrent;
+
+   private CardViewModel? _playedCard;
+
+   private int _playOrder;
+   private List<CardViewModel> _takenCards = new();
 
    public PlayerViewModel(IPlayer player, GameModel gameModel, PlayerModel model, CanPlayDelegate canPlayPredicate)
    {
@@ -51,22 +49,7 @@ internal class PlayerViewModel : ViewModelBase
 
    public event EventHandler<CardSelectedEventArgs> CardSelected = null!;
 
-   public Guid Id { get; }
-   private List<CardViewModel> _takenCards = new();
-
-   private int _playOrder;
-
-   public int PlayOrder
-   {
-      get => _playOrder;
-      set
-      {
-         _playOrder = value;
-         OnPropertyChanged(nameof(PlayOrder));
-      }
-   }
-
-   private CardViewModel? _communicatedCard;
+   public SemaphoreSlim? CardPlayedSemaphore { get; init; }
    public CardViewModel? CommunicatedCard
    {
       get { return _communicatedCard; }
@@ -76,8 +59,6 @@ internal class PlayerViewModel : ViewModelBase
          OnPropertyChanged();
       }
    }
-   public RelayCommand<CardViewModel> SelectCardCommand { get; }
-   private CommunicationToken _communicationToken = CommunicationToken.None;
 
    public CommunicationToken CommunicationToken
    {
@@ -91,7 +72,17 @@ internal class PlayerViewModel : ViewModelBase
 
    public ObservableCollection<CardViewModel> Hand { get; } = new();
 
-   private CardViewModel? _playedCard;
+   public Guid Id { get; }
+
+   public bool IsCurrent
+   {
+      get { return _isCurrent; }
+      set
+      {
+         _isCurrent = value;
+         OnPropertyChanged();
+      }
+   }
    public CardViewModel? PlayedCard
    {
       get { return _playedCard; }
@@ -100,6 +91,62 @@ internal class PlayerViewModel : ViewModelBase
          _playedCard = value;
          OnPropertyChanged();
       }
+   }
+
+   public int PlayOrder
+   {
+      get => _playOrder;
+      set
+      {
+         _playOrder = value;
+         OnPropertyChanged(nameof(PlayOrder));
+      }
+   }
+   public RelayCommand<CardViewModel> SelectCardCommand { get; }
+
+   public static PlayerViewModel CreateAi(GameModel gameModel, PlayerModel model, CanPlayDelegate canPlayPredicate)
+   {
+      return new PlayerViewModel(new DummyAiPlayer(model, gameModel), gameModel, model, canPlayPredicate);
+   }
+   public static PlayerViewModel CreateHuman(GameModel gameModel, PlayerModel model, CanPlayDelegate canPlayPredicate)
+   {
+      return new PlayerViewModel(new WpfPlayer(model, gameModel), gameModel, model, canPlayPredicate)
+      {
+         CardPlayedSemaphore = new(0, 1)
+      };
+   }
+
+   public void AddCardsToHand(IEnumerable<ICard> cards, ICardImageSelector cardImageSelector, bool frontface)
+   {
+      foreach (var card in cards)
+      {
+         Hand.Add(new CardViewModel(card, cardImageSelector, SelectCardCommand)
+         {
+            Frontface = frontface,
+         });
+      }
+   }
+   public void PlayCard(CardViewModel cardViewModel)
+   {
+      var cardFromHand = Hand.Where(x => x.Card.Equals(cardViewModel.Card)).First();
+
+      App.Current.Dispatcher.Invoke(() =>
+      {
+         if (Hand.Remove(cardFromHand))
+         {
+            cardViewModel.Frontface = true;
+            PlayedCard = cardViewModel;
+         }
+      });
+
+      _model.PlayCard(cardViewModel.Card);
+
+      if (_gameModel.CurrentSuit is null && cardViewModel.Card is IPlayCard playCard)
+      {
+         _gameModel.CurrentSuit = playCard.Suit;
+      }
+
+      CardPlayedSemaphore?.Release();
    }
 
    public async Task StartPlayCard()
@@ -121,37 +168,6 @@ internal class PlayerViewModel : ViewModelBase
          throw new NotSupportedException();
       }
    }
-   public void TakeStick(IEnumerable<CardViewModel> cards)
-   {
-      foreach (var card in cards)
-      {
-         _takenCards.Add(card);
-
-         // todo: flagga uppdrag om slutförda
-      }
-   }
-   public void PlayCard(CardViewModel cardViewModel)
-   {
-      var cardFromHand = Hand.Where(x => x.Card.Equals(cardViewModel.Card)).First();
-
-      App.Current.Dispatcher.Invoke(() =>
-      {
-         if (Hand.Remove(cardFromHand))
-         {
-            cardViewModel.Frontface = true;
-            PlayedCard = cardViewModel;
-         }
-      });
-
-      _model.PlayCard(cardViewModel.Card);
-
-      if(_gameModel.CurrentSuit is null && cardViewModel.Card is IPlayCard playCard)
-      {
-         _gameModel.CurrentSuit = playCard.Suit;
-      }
-
-      CardPlayedSemaphore?.Release();
-   }
 
    public CardViewModel TakePlayedCard()
    {
@@ -164,30 +180,13 @@ internal class PlayerViewModel : ViewModelBase
          PlayedCard = null;
       }
    }
-
-   private bool _isCurrent;
-   private readonly IPlayer _player;
-   private readonly PlayerModel _model;
-   private readonly GameModel _gameModel;
-
-   public bool IsCurrent
-   {
-      get { return _isCurrent; }
-      set
-      {
-         _isCurrent = value;
-         OnPropertyChanged();
-      }
-   }
-
-   public void AddCardsToHand(IEnumerable<ICard> cards, ICardImageSelector cardImageSelector, bool frontface)
+   public void TakeStick(IEnumerable<CardViewModel> cards)
    {
       foreach (var card in cards)
       {
-         Hand.Add(new CardViewModel(card, cardImageSelector, SelectCardCommand)
-         {
-            Frontface = frontface,
-         });
+         _takenCards.Add(card);
+
+         // todo: flagga uppdrag om slutförda
       }
    }
 }

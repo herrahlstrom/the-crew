@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using TheCrew.Shared;
@@ -34,6 +31,17 @@ internal class CardImageSelector : ICardImageSelector
       return bitmapImage;
    }
 
+
+   private BitmapImage GetBitmapImage(string path)
+   {
+      BitmapImage bmp = new BitmapImage();
+      bmp.BeginInit();
+      bmp.UriSource = new Uri(path);
+      bmp.EndInit();
+
+      return bmp;
+   }
+
    private string GetCardImagePath(ICard card, bool frontface)
    {
       if (card is IValueCard valueCard)
@@ -57,16 +65,5 @@ internal class CardImageSelector : ICardImageSelector
          };
       }
       throw new NotImplementedException();
-   }
-
-
-   private BitmapImage GetBitmapImage(string path)
-   {
-      BitmapImage bmp = new BitmapImage();
-      bmp.BeginInit();
-      bmp.UriSource = new Uri(path);
-      bmp.EndInit();
-
-      return bmp;
    }
 }
