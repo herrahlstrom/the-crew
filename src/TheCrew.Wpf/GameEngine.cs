@@ -10,9 +10,9 @@ namespace TheCrew.Wpf
    {
       private readonly GameModel _game;
       private readonly Func<Guid, Task> _playCardAction;
-      private readonly Action<Guid> _stickCompleted;
+      private readonly Func<Guid, Task> _stickCompleted;
 
-      public GameEngine(GameModel game, Func<Guid, Task> playCardAction, Action<Guid> stickCompleted)
+      public GameEngine(GameModel game, Func<Guid, Task> playCardAction, Func<Guid, Task> stickCompleted)
       {
          _game = game;
          _playCardAction = playCardAction;
@@ -38,16 +38,12 @@ namespace TheCrew.Wpf
                   _game.CurrentPlayer = player.Id;
                   PlayerChanged?.Invoke(this, player.Id);
 
-                  await Task.Delay(750, cancellationToken);
-
                   await HandlePlayer(player, cancellationToken);
-                  
-                  await Task.Delay(500, cancellationToken);
                }
 
                var winnerId = GetWinner();
                _game.LastWinnerPlayerId = winnerId;
-               _stickCompleted.Invoke(winnerId);
+               await _stickCompleted.Invoke(winnerId);
             }
          }
          catch (OperationCanceledException) { }
@@ -73,16 +69,12 @@ namespace TheCrew.Wpf
 
       private async Task HandlePlayer(PlayerModel player, CancellationToken cancellationToken)
       {
+         if (player.Type == PlayerType.Ai)
+         {
+            await Task.Delay(750, cancellationToken);
+         }
 
          await _playCardAction.Invoke(player.Id);
-         //if (player.Type == PlayerType.Ai)
-         //{
-         //   await _playCardAction.Invoke(player.Id);
-         //}
-         //else
-         //{
-         //   await HumanCompleted.WaitAsync(cancellationToken);
-         //}
       }
    }
 }

@@ -88,12 +88,6 @@ internal class MainViewModel : ViewModelBase
 
    private IReadOnlyDictionary<Guid, PlayerViewModel> Players { get; set; } = ImmutableDictionary<Guid, PlayerViewModel>.Empty;
 
-   private void CompleteTrick()
-   {
-      // Check winner
-
-   }
-
    private void InitTrick()
    {
       int playOrder = 0;
@@ -109,9 +103,14 @@ internal class MainViewModel : ViewModelBase
       await player.StartPlayCard();
    }
 
-   private void StickCompleted(Guid winnerPLayerId)
+   private async Task StickCompleted(Guid winnerPLayerId)
    {
       var winnerPlayer = Players[winnerPLayerId];
+
+      winnerPlayer.IsCurrentWinner = true;
+      await Task.Delay(TimeSpan.FromSeconds(2));
+      winnerPlayer.IsCurrentWinner = false;
+
       winnerPlayer.TakeStick(Players.Values.Select(x => x.TakePlayedCard()));
 
       InitTrick();

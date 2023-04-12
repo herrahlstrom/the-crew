@@ -70,6 +70,19 @@ internal abstract class PlayerViewModel : ViewModelBase
          OnPropertyChanged();
       }
    }
+
+   private bool _isCurrentWinner;
+
+   public bool IsCurrentWinner
+   {
+      get { return _isCurrentWinner; }
+      set
+      {
+         _isCurrentWinner = value;
+         OnPropertyChanged();
+      }
+   }
+
    public CardViewModel<IPlayCard>? PlayedCard
    {
       get { return _playedCard; }

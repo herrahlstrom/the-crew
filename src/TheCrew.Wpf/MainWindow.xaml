@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TheCrew.Wpf" xmlns:converters="clr-namespace:TheCrew.Wpf.Converters"
         mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:MainViewModel, IsDesignTimeCreatable=false}"
         Title="The Crew" Height="700" Width="700">
    <Window.Resources>
       <converters:HasValueConverter x:Key="DisplayValueConverter" ReturnVisibility="True" />
@@ -45,7 +46,7 @@
          </local:PlayerUserControl.LayoutTransform>
       </local:PlayerUserControl>
 
-      <Grid Grid.Column="1" Grid.Row="1">
+      <Grid Grid.Column="1" Grid.Row="1" x:Name="PlayGrid">
          <Grid.Resources>
             <Style TargetType="Border">
                <Setter Property="BorderThickness" Value="1" />
@@ -54,6 +55,71 @@
                <Setter Property="Background" Value="White" />
                <Setter Property="Height" Value="130" />
                <Setter Property="Width" Value="80" />
+            </Style>
+            <Style TargetType="Grid">
+               <Setter Property="RenderTransform">
+                  <Setter.Value>
+                     <TranslateTransform X="0" Y="0" />
+                  </Setter.Value>
+               </Setter>
+               <Style.Triggers>
+
+                  <DataTrigger Binding="{Binding LeftPlayer.IsCurrentWinner}" Value="True">
+                     <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="AnimToLeft">
+                           <Storyboard>
+                              <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1"/>
+                              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" From="0" To="-300" Duration="0:0:1"/>
+                           </Storyboard>
+                        </BeginStoryboard>
+                     </DataTrigger.EnterActions>
+                     <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="AnimToLeft" />
+                     </DataTrigger.ExitActions>
+                  </DataTrigger>
+
+                  <DataTrigger Binding="{Binding TopPlayer.IsCurrentWinner}" Value="True">
+                     <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="AnimToTop">
+                           <Storyboard>
+                              <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1"/>
+                              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="0" To="-300" Duration="0:0:1"/>
+                           </Storyboard>
+                        </BeginStoryboard>
+                     </DataTrigger.EnterActions>
+                     <DataTrigger.ExitActions>
+                        <RemoveStoryboard BeginStoryboardName="AnimToTop" />
+                     </DataTrigger.ExitActions>
+                  </DataTrigger>
+
+                  <DataTrigger Binding="{Binding RightPlayer.IsCurrentWinner}" Value="True">
+                     <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="AnimToRight" >
+                           <Storyboard>
+                              <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1"/>
+                              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" From="0" To="300" Duration="0:0:1"/>
+                           </Storyboard>
+                        </BeginStoryboard>
+                     </DataTrigger.EnterActions>
+                     <DataTrigger.ExitActions>
+                        <RemoveStoryboard BeginStoryboardName="AnimToRight" />
+                     </DataTrigger.ExitActions>
+                  </DataTrigger>
+
+                  <DataTrigger Binding="{Binding BottomPlayer.IsCurrentWinner}" Value="True">
+                     <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="AnimToBottom" >
+                           <Storyboard>
+                              <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1"/>
+                              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="0" To="300" Duration="0:0:1"/>
+                           </Storyboard>
+                        </BeginStoryboard>
+                     </DataTrigger.EnterActions>
+                     <DataTrigger.ExitActions>
+                        <RemoveStoryboard BeginStoryboardName="AnimToBottom" />
+                     </DataTrigger.ExitActions>
+                  </DataTrigger>
+               </Style.Triggers>
             </Style>
          </Grid.Resources>
          <Border DataContext="{Binding TopPlayer}"  Margin="20,-60,-20,60" Panel.ZIndex="{Binding PlayOrder}"
